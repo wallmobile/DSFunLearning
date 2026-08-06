@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../data/curriculum_data.dart';
 import '../models/class_model.dart';
+import '../providers/auth_provider.dart' as ap;
 import '../widgets/class_card.dart';
 import 'subject_screen.dart';
 
@@ -10,15 +12,17 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final groups = ['Primary', 'Middle', 'Secondary', 'Senior'];
+    final user = context.watch<ap.AuthProvider>().userModel;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F7FF),
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 200,
             pinned: true,
             backgroundColor: const Color(0xFF4A6CF7),
+            automaticallyImplyLeading: false,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(
@@ -56,25 +60,87 @@ class HomeScreen extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
+                            const Spacer(),
+                            if (user != null)
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.star,
+                                    color: Color(0xFFFFCC00),
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    '${user.totalPoints} pts',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Select Your Class',
-                          style: TextStyle(
+                        Text(
+                          user != null
+                              ? 'Hello, ${user.displayName.split(' ').first}! 👋'
+                              : 'Select Your Class',
+                          style: const TextStyle(
                             color: Colors.white,
-                            fontSize: 26,
+                            fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(
-                          'Class 1 – 12 | All Subjects',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.8),
-                            fontSize: 14,
+                        if (user != null)
+                          Row(
+                            children: [
+                              Text(
+                                '${user.completedTopics.length} topics completed',
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                  fontSize: 13,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Text(
+                                      '🔥',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${user.streak} day streak',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          )
+                        else
+                          Text(
+                            'Class 1 – 12 | All Subjects',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 14,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                   ),
@@ -85,71 +151,65 @@ class HomeScreen extends StatelessWidget {
           SliverPadding(
             padding: const EdgeInsets.all(16),
             sliver: SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, groupIndex) {
-                  final group = groups[groupIndex];
-                  final groupClasses = CurriculumData.classes
-                      .where((c) => c.group == group)
-                      .toList();
+              delegate: SliverChildBuilderDelegate((context, groupIndex) {
+                final group = groups[groupIndex];
+                final groupClasses = CurriculumData.classes
+                    .where((c) => c.group == group)
+                    .toList();
 
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8, bottom: 12),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 4,
-                              height: 20,
-                              decoration: BoxDecoration(
-                                color: _groupColor(group),
-                                borderRadius: BorderRadius.circular(2),
-                              ),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8, bottom: 12),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 4,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: _groupColor(group),
+                              borderRadius: BorderRadius.circular(2),
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              '$group School',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey[800],
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            '$group School',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey[800],
                             ),
-                            const SizedBox(width: 8),
-                            Text(
-                              _groupRange(group),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey[500],
-                              ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            _groupRange(group),
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[500],
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
-                      GridView.count(
-                        crossAxisCount: 3,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.9,
-                        children: groupClasses.map((classModel) {
-                          return ClassCard(
-                            classModel: classModel,
-                            onTap: () => _navigateToSubjects(
-                              context,
-                              classModel,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                  );
-                },
-                childCount: groups.length,
-              ),
+                    ),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 0.9,
+                      children: groupClasses.map((classModel) {
+                        return ClassCard(
+                          classModel: classModel,
+                          onTap: () => _navigateToSubjects(context, classModel),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                );
+              }, childCount: groups.length),
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -191,9 +251,7 @@ class HomeScreen extends StatelessWidget {
   void _navigateToSubjects(BuildContext context, ClassModel classModel) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => SubjectScreen(classModel: classModel),
-      ),
+      MaterialPageRoute(builder: (_) => SubjectScreen(classModel: classModel)),
     );
   }
 }
